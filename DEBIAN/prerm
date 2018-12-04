@@ -1,0 +1,8 @@
+#!/bin/bash
+
+#make dirtoshmConfig script remove dir.backup directories
+[[ $1 == remove ]] && dirtoshmConfig ""
+
+service dirtoshm stop
+
+exit 0

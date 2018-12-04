@@ -1,0 +1,31 @@
+#!/bin/bash
+# /etc/init.d/dirtoshm
+
+### BEGIN INIT INFO
+# Provides:          dirtoshm
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Brings dirs to shm, saves changes
+# Description:       This copies directories specified as variable DIR (all the dirs with spaces in between) to shm to speed r/w up. Changes made to the directories are saved to the dir.backup dir.
+### END INIT INFO
+
+#read config file
+DIR=`head -n 1 /etc/dirtoshmConfig/ramdirs`
+
+case "$1" in
+    start)
+        /usr/bin/toRAM "$DIR"
+        ;;
+    stop)
+        /usr/bin/toDisk "$DIR"
+        ;;
+    *)
+        echo "Current dirs on RAMdisk: $DIR"
+        echo "Run /usr/bin/dirtoshmConfig to modify which directories are moved to RAM."
+        exit 1
+        ;;
+esac
+
+exit $?

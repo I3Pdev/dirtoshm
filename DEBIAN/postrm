@@ -1,0 +1,12 @@
+#!/bin/bash
+
+[[ $1 == purge ]] && rm -r /etc/dirtoshmConfig
+
+#update init.d to forget the service
+update-rc.d dirtoshm remove
+systemctl daemon-reload
+
+#restart service after upgrading
+[[ $1 == upgrade ]] && service dirtoshm start
+
+exit 0

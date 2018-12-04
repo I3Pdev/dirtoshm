@@ -1,0 +1,106 @@
+Installation:
+  Deploy:
+    /etc/init.d/dirtoshm
+    /usr/bin/dirtoshmConfig
+    /usr/bin/toRAM
+    /usr/bin/toDisk
+    /usr/share/applications/dirtoshmConfig.desktop
+
+Removal:
+  PreRm:
+    Configure ramdirs to "", make sure all .backup dirs are deleted (by calling dirtoshmConfig "")
+    Stop Service
+  Remove files but:
+    /etc/dirtoshmConfig/ramdirs
+  PostRm:
+    if Purging:
+      Remove /etc/dirtoshmConfig
+    Update rc.d service & Reload systemctl deamon
+
+Update/Reinstallation:
+  PreRm:
+    Stop Service
+  Deploy:
+    /etc/init.d/dirtoshm
+    /usr/bin/dirtoshmConfig
+    /usr/bin/toRAM
+    /usr/bin/toDisk
+    /usr/share/applications/dirtoshmConfig.desktop
+  PostRm:
+    Update rc.d service & Reload systemctl deamon
+    Start service
+
+
+dirtoshmConfig:
+  This is the user interface. It should interact with the user and offer --help
+  Ensure root
+  Stop service
+  Read new ramdirs if not argument
+  Check for ~ and relative paths
+  Use ~ as field sperator to allow for paths containing spaces
+  Overwrite old /etc/dirtoshmConfig/ramdirs
+  Remove dir.backup if no longer ramdir
+  Update rc.d service & Reload systemctl deamon
+  Start service
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##Old version with RAMDIRS saved into init.d script
+
+
+Installation:
+  PreInst: NOTHING
+  Deploy:
+    /etc/dirtoshmConfig/dirtoshm_default
+    /usr/bin/dirtoshmConfig
+    /usr/bin/toRAM
+    /usr/bin/toDisk
+    /usr/share/applications/dirtoshmConfig.desktop
+  PostInst:
+    Move dirtoshm_default to /etc/init.d
+    Configure ramdirs
+
+Removing:
+  PreRm:
+    Stop Service
+    Save current RAMDIRS as one line to /etc/dirtoshmConfig/ramdirs
+  Remove files but:
+    /etc/dirtoshmConfig/ramdirs
+    /etc/init.d/dirtoshm
+  PostRm:
+    Remove /etc/init.d/dirtoshm
+    Rename RAMDIRS (remove .backup suffix (TODO: write script which is used when removing ramdirs))
+    if Purging:
+      Remove /etc/dirtoshmConfig
+
+Updating:
+  PreRm:
+    Stop Service
+    Save current RAMDIRS as one line to /etc/dirtoshmConfig/ramdirs
+  PreInst: NOTHING
+  Deploy:
+    /etc/dirtoshmConfig/dirtoshm_default
+    /usr/bin/dirtoshmConfig
+    /usr/bin/toRAM
+    /usr/bin/toDisk
+    /usr/share/applications/dirtoshmConfig.desktop
+  PostRm:
+    Remove old /etc/init.d/dirtoshm
+  PostInst:
+    Move dirtoshm_default to /etc/init.d
+    Retrieve saved ramdirs and write them into init.d script

@@ -1,0 +1,22 @@
+#!/bin/bash -x
+
+#Path has to be absolute and not use ~
+
+#Config file uses ~ as field separator
+IFS='~'
+
+for DIR in $*
+do
+  BACKUP="$DIR".backup
+  RAMDIR="/dev/shm$DIR"
+  if [[ -d "$RAMDIR" ]]; then
+  rsync -au "$DIR"/ "$BACKUP" --delete
+  rm -r "$DIR"/*
+  rm -r "$DIR"
+  cp -r "$BACKUP" "$DIR"
+  #restore ownership
+  chown -R `stat -c %U "$BACKUP"` "$DIR"
+  fi
+done
+
+exit $?

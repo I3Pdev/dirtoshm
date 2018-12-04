@@ -1,0 +1,11 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Encoding=UTF-8
+Exec=/usr/bin/dirtoshmConfig
+Type=Application
+Terminal=true
+Comment=Choose directories to be put onto a RAMdisk to enhance app startup speed
+Name=dirToShm Configuration
+Categories=System;
+Name[en_US]=dirtoshm Configuration

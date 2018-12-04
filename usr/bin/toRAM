@@ -1,0 +1,35 @@
+#!/bin/bash -x
+
+#Path has to be absolute and not use ~
+
+#Config file uses ~ as field separator
+IFS='~'
+
+for DIR in $*
+do
+  BACKUP="$DIR.backup"
+  RAMDIR="/dev/shm$DIR"
+
+  #omit dir if nonexistent
+  [[ -d "$DIR" ]] || continue
+
+  #Sync changes made while dirtoshm was offline & delete (broken) links
+  rsync -au "$DIR"/ "$BACKUP" --delete
+  [[ -L "$DIR" ]] && rm "$DIR"
+
+  #make ramdirs parent directories & clear ramdir
+  mkdir -p "$RAMDIR"
+  rm -r "$RAMDIR"
+
+  #copy dir's contents to RAM
+  cp -r "$BACKUP"/ "$RAMDIR"
+
+  #restore ownership
+  chown -R `stat -c %U "$DIR"` "$DIR".backup "$RAMDIR"
+
+  #replace dir by link to ramdir
+  rm -rf "$DIR"
+  ln -sf "$RAMDIR" "$DIR"
+done
+
+exit $?

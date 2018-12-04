@@ -1,0 +1,103 @@
+#!/bin/bash
+
+
+#Print help
+HELP="Usage: dirtoshmConfig [DIRECTORY]... | [ -h | --help ]
+Configure which directories dirtoshm moves to RAM.
+
+DIRECTORY has to be the ABSOLUTE path to the directory. It must not contain ~.
+Multiple directories can be specified, spaces in paths have to be quoted.
+
+If no directory specified, read from stdin.
+
+Exit status:
+  0 if OK,
+  1 if wrong arguments or aborted."
+[[ "$1" == "--help" || "$1" == "-h" ]] && echo "$HELP" && exit 0
+
+#If there are arguments and it is not empty to remove all ramdirs, check for wrong syntax and exit or improve and save in variable.
+if [[ "$1" != "" ]]; then
+  for newRAMDIR in "$@"; do
+    #Check individual ramdirs for relative paths and ~
+    [[ "$newRAMDIR" != /* || "$newRAMDIR" == *'~'* ]] && echo 'Must use the absolute Path. Must not contain ~. Exiting.' && sleep 2 && exit 1
+    #if dir ends in /, remove last /
+    [[ "$newRAMDIR" == */ ]] && newRAMDIR=`echo "$newRAMDIR" | rev | cut -d'/' -f2- | rev`
+    #warn if not an existing directory
+    [[ -d "$newRAMDIR" ]] || echo "WARNING: $newRAMDIR is not a directory."
+    newRAMDIRS="$newRAMDIRS"'~'"$newRAMDIR"
+  done
+fi
+
+#Has to be run as root
+if [[ $EUID -ne 0 ]]; then
+    sudo -p 'Restarting as root, password: ' bash $0 "$@"
+    exit $?
+fi
+
+#Save old ramdirs
+[[ -f /etc/dirtoshmConfig/ramdirs ]] && oldRAMDIRS=`head -n 1 /etc/dirtoshmConfig/ramdirs`
+
+#If ramdirs are not argument, let user type them
+if [[ $# -eq 0 ]]; then
+  echo "Please choose directories to put onto a RAMdisk."
+  echo "Do not mess with anything system-related (e.g. /usr/share/icons). STOP IF YOU ARE NOT ABSOLUTELY SURE YOU KNOW WHAT YOU ARE DOING! Type YES to continue."
+  [[ `read v && echo $v` == YES ]] || echo "No changes made. Exiting." || sleep 2 || exit 1
+
+  echo "Please enter or paste one directory per line. When done, press ENTER two times."
+  while true; do
+    read newRAMDIR
+    #if not empty, add
+    if [[ $newRAMDIR ]]; then
+      #Check individual ramdirs for relative paths and ~
+      [[ "$newRAMDIR" != /* ]] && echo 'Please use the absolute Path. Must not contain ~.' && continue
+      #if dir ends in /, remove last /
+      [[ "$newRAMDIR" == */ ]] && newRAMDIR=`echo "$newRAMDIR" | rev | cut -d'/' -f2- | rev`
+      #warn if not an existing directory
+      [[ -d "$newRAMDIR" ]] || echo "WARNING: $newRAMDIR is not a directory."
+      newRAMDIRS="$newRAMDIRS"'~'"$newRAMDIR"
+    else
+      #stop reading
+      break
+    fi
+  done
+
+fi
+
+#~dir1~dir2 -> dir1~dir2
+newRAMDIRS=`echo "$newRAMDIRS" | cut -d'~' -f2-`
+
+#check whether directories fit into RAM
+IFS='~'
+size=0
+ramsize=`awk '/MemTotal/{print $2}' /proc/meminfo`
+for newRAMDIR in $newRAMDIRS; do
+  size=$(( $size + `du -s $newRAMDIR | grep ^[1234567890] | cut -f1` ))
+done
+IFS=' '
+#if size difference < 4GB, warn
+if [[ $(( $ramsize - $size )) -lt 4000000 ]]; then
+  echo "WARNING: Size of your ramdirs is: $(( $size / 1000 )) MB. You only have $(( $ramsize / 1000 )) MB of RAM. Type YES to continue."
+  [[ `read v && echo $v` == YES ]] || echo "No changes made. Exiting." || sleep 2 || exit 1
+fi
+
+#pause service while making changes
+service dirtoshm stop
+
+#save to config file
+echo "$newRAMDIRS" > /etc/dirtoshmConfig/ramdirs
+echo "Set. You can change it whenever you like."
+
+#If no longer ramdir, remove dir.backup
+IFS='~'
+for oldRAMDIR in $oldRAMDIRS; do
+  if [[ $newRAMDIRS != *" $oldRAMDIR "* ]]; then
+    [[ -d "$oldRAMDIR.backup" ]] && rm -r "$oldRAMDIR".backup
+  fi
+done
+IFS=' '
+
+#Reload and restart service
+update-rc.d dirtoshm defaults
+systemctl daemon-reload
+service dirtoshm start
+exit 0
