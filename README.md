@@ -1,7 +1,6 @@
 # dirtoshm  
 Move directories to a RAMdisk to speed up app start times.  
 
-DirToShm: Move directories to a RAMdisk to speed up app start times.  
 
 Configuration:  
 >  Usage: dirtoshmConfig [DIRECTORY]... | [ -h | --help ]  
@@ -16,13 +15,17 @@ Configuration:
 >    0 if OK,  
 >    1 if wrong arguments or aborted.  
 
-Starting / Stopping the service:  
+
+Starting / Stopping the service (autostart at system startup after successful configuration):  
 >  service dirtoshm start | stop  
+
 
 Updates:  
 >  https://github.com/I3Pdev/dirtoshm/release  
 
+
 Packaging:  
->  Downloads source  
->  Move all directories except README.md, license and release folder into one folder called dirtoshm  
->  run `fakeroot dpkg-deb --build dirtoshm`
+>  Download source  
+>  Move all directories except release (and except README.md and license) into one folder called dirtoshm  
+>  (`apt install fakeroot dpkg-dev`)  
+>  run `fakeroot dpkg-deb --build dirtoshm`  
